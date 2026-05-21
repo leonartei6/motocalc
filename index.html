@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MotoCalc - Calculadora do Motoboy</title>
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#e74c3c">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MotoCalc">
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body>
+
+  <header>
+    <h1>🛵 MotoCalc</h1>
+    <p class="subtitulo">Calculadora financeira para motoboys e motoristas de app</p>
+  </header>
+
+  <main>
+
+    <!-- ====== SEÇÃO 1: CONFIGURAÇÃO DA MOTO ====== -->
+    <section class="card">
+      <h2>⛽ Configuração da Moto</h2>
+      <div class="grid-2">
+        <div>
+          <label>Preço do combustível (R$/litro)</label>
+          <input type="number" id="precoCombustivel" step="0.01" placeholder="Ex: 6.00">
+        </div>
+        <div>
+          <label>Consumo (km por litro)</label>
+          <input type="number" id="kmPorLitro" step="0.1" placeholder="Ex: 35">
+        </div>
+        <div>
+          <label>Quantos KM você roda num dia normal?</label>
+          <input type="number" id="kmPorDia" step="1" placeholder="Ex: 120">
+          <small>Não é previsão! Olha teu odômetro no início e fim de um dia normal. Pode ser uma média aproximada
+            👍</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SEÇÃO 2: GASTOS ====== -->
+    <section class="card">
+      <h2>💰 Meus Gastos</h2>
+      <div class="form-gasto">
+        <input type="text" id="nomeGasto" placeholder="Nome (ex: IPVA, Aluguel)">
+        <input type="number" id="valorGasto" step="0.01" placeholder="Valor (R$)">
+        <input type="date" id="dataGasto">
+        <select id="tipoGasto">
+          <option value="moto">🛵 Moto</option>
+          <option value="pessoal">👤 Pessoal</option>
+        </select>
+        <select id="recorrenciaGasto">
+          <option value="mensal">🔁 Mensal</option>
+          <option value="anual">📅 Anual</option>
+          <option value="unica">1️⃣ Única</option>
+        </select>
+        <label class="check-prioridade">
+          <input type="checkbox" id="prioridadeGasto"> 🚨 Prioridade
+        </label>
+        <button id="btnAddGasto">+ Adicionar</button>
+      </div>
+
+      <ul id="listaGastos" class="lista-gastos"></ul>
+
+      <div class="totais">
+        <span class="tag tag-moto">Total Moto/mês: R$ <span id="totalMoto">0,00</span></span>
+        <span class="tag tag-pessoal">Total Pessoal/mês: R$ <span id="totalPessoal">0,00</span></span>
+        <span class="tag tag-geral">Total Geral/mês: R$ <span id="totalGeral">0,00</span></span>
+      </div>
+    </section>
+
+    <!-- ====== SEÇÃO 3: PRÓXIMOS VENCIMENTOS ====== -->
+    <section class="card">
+      <h2>📅 Próximos Vencimentos</h2>
+      <ul id="listaVencimentos" class="lista-vencimentos">
+        <li class="vazio">Nenhum gasto com data ainda</li>
+      </ul>
+      <div class="resumo-prazo" id="resumoPrazo"></div>
+    </section>
+
+    <!-- ====== SEÇÃO 4: DASHBOARD DE RESULTADOS ====== -->
+    <section class="card destaque">
+      <h2>📊 Resultados</h2>
+      <div class="grid-resultados">
+        <div class="resultado">
+          <span class="label">Custo do combustível/km</span>
+          <span class="valor" id="rCustoComb">R$ 0,00</span>
+        </div>
+        <div class="resultado">
+          <span class="label">Gastos fixos diluídos/km</span>
+          <span class="valor" id="rGastoKm">R$ 0,00</span>
+        </div>
+        <div class="resultado destaque-valor">
+          <span class="label">💡 Valor MÍNIMO por km</span>
+          <span class="valor" id="rValorMinKm">R$ 0,00</span>
+        </div>
+      </div>
+
+      <h3 class="subtitulo-secao">📅 Quantos dias por mês você quer trabalhar?</h3>
+      <p class="dica-secao">Clique no cenário que mais combina com tua rotina:</p>
+      <div class="grid-cenarios">
+        <div class="cenario" data-dias="30" onclick="selecionarCenario(30)">
+          <span class="cenario-titulo">🔥 Todo dia</span>
+          <span class="cenario-dias">30 dias/mês</span>
+          <span class="cenario-valor" id="vMin30">R$ 0,00/km</span>
+        </div>
+        <div class="cenario selecionado" data-dias="26" onclick="selecionarCenario(26)">
+          <span class="cenario-titulo">💼 Dias úteis</span>
+          <span class="cenario-dias">26 dias/mês</span>
+          <span class="cenario-valor" id="vMin26">R$ 0,00/km</span>
+        </div>
+        <div class="cenario" data-dias="22" onclick="selecionarCenario(22)">
+          <span class="cenario-titulo">😎 Seg a Sex</span>
+          <span class="cenario-dias">22 dias/mês</span>
+          <span class="cenario-valor" id="vMin22">R$ 0,00/km</span>
+        </div>
+      </div>
+
+      <div class="alerta" id="alertaPrejuizo"></div>
+    </section>
+
+    <!-- ====== SEÇÃO 5: MODO DE TRABALHO ====== -->
+    <section class="card">
+      <h2>🎯 Modo de Trabalho</h2>
+      <p class="dica">Escolha o que você faz pra liberar a calculadora certa</p>
+
+      <div class="seletor-modo">
+        <label class="opcao-modo">
+          <input type="radio" name="modo" value="delivery">
+          <span>🍔 Delivery<br><small>Comida e objetos</small></span>
+        </label>
+        <label class="opcao-modo">
+          <input type="radio" name="modo" value="passageiro">
+          <span>🧍 Passageiro<br><small>Levar pessoas</small></span>
+        </label>
+        <label class="opcao-modo">
+          <input type="radio" name="modo" value="ambos">
+          <span>🔄 Os dois<br><small>Faço delivery e passageiro</small></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- ====== CALCULADORA DELIVERY ====== -->
+    <section class="card calc-modo oculto" id="calcDelivery">
+      <h2>🍔 Calculadora - Delivery</h2>
+      <p class="dica">Vale a pena aceitar essa entrega? Calcula aqui!</p>
+      <div class="grid-2">
+        <div>
+          <label>Distância total da corrida (km)</label>
+          <input type="number" id="distDelivery" step="0.1" placeholder="Ex: 8.5">
+          <small>Considere ida + volta até o próximo ponto</small>
+        </div>
+      </div>
+      <button class="btn-grande" onclick="calcularDelivery()">Calcular</button>
+      <div class="resultado-corrida" id="resDelivery"></div>
+    </section>
+
+    <!-- ====== CALCULADORA PASSAGEIRO ====== -->
+    <section class="card calc-modo oculto" id="calcPassageiro">
+      <h2>🧍 Calculadora - Passageiro</h2>
+      <p class="dica">Pra passageiro o tempo também conta (trânsito, espera)</p>
+      <div class="grid-2">
+        <div>
+          <label>Distância da corrida (km)</label>
+          <input type="number" id="distPass" step="0.1" placeholder="Ex: 12">
+        </div>
+        <div>
+          <label>Tempo estimado (minutos)</label>
+          <input type="number" id="tempoPass" placeholder="Ex: 30">
+        </div>
+      </div>
+      <button class="btn-grande" onclick="calcularPassageiro()">Calcular</button>
+      <div class="resultado-corrida" id="resPassageiro"></div>
+    </section>
+
+    <!-- ====== GRÁFICO ====== -->
+    <section class="card">
+      <h2>📈 Gráfico de Gastos</h2>
+      <canvas id="graficoGastos"></canvas>
+    </section>
+
+    <!-- ====== EXPORTAR ====== -->
+    <section class="card">
+      <button id="btnExportarPDF" class="btn-grande btn-pdf">📄 Exportar Relatório em PDF</button>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
